@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <title>Integration Tests</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; padding: 20px; }
+    .pass { color: #4f4; }
+    .fail { color: #f44; font-weight: bold; }
+    pre { background: #222; padding: 10px; border-radius: 6px; overflow-x: auto; white-space: pre; }
+    h2 { color: #9ab0da; }
+  </style>
+</head>
+<body>
+  <h1>Integration Tests</h1>
+  <pre id="log"></pre>
+
+  <script src="js/namespace.js?v=3"></script>
+  <script src="js/utils.js?v=3"></script>
+  <script src="js/paragraph_ref_set.js?v=3"></script>
+  <script src="js/rejection_parser.js?v=3"></script>
+  <script src="js/rejection_analyzer.js?v=3"></script>
+  <script src="js/ascii_table.js?v=3"></script>
+  <script>
+    var log = document.getElementById("log");
+    var passed = 0, failed = 0;
+
+    function out(s) { log.textContent += s + "\n"; }
+    function assert(label, actual, expected) {
+      if (actual === expected) {
+        out("PASS " + label); passed++;
+      } else {
+        out("FAIL " + label);
+        out("  expected: " + JSON.stringify(expected));
+        out("  actual:   " + JSON.stringify(actual));
+        failed++;
+      }
+    }
+    function assertDeep(label, actual, expected) {
+      assert(label, JSON.stringify(actual), JSON.stringify(expected));
+    }
+
+    var u = new window.ROA.Utils();
+    var parser = new window.ROA.RejectionParser(u);
+    var analyzer = new window.ROA.RejectionAnalyzer(u, parser);
+    var table = new window.ROA.AsciiTable(u);
+
+    // ============================================================
+    out("=== Integration Test: Full Analyzer ===\n");
+
+    var testInput = [
+      "\uFF1C\u5F15\u7528\u6587\u732E\u7B49\u4E00\u89A7\uFF1E",
+      "1\uFF0E\u7279\u958B2020-123456\u53F7\u516C\u5831",
+      "2\uFF0E\u7279\u958B2021-789012\u53F7\u516C\u5831",
+      "",
+      "\u25CF\u7406\u7531\uFF11\uFF08\u9032\u6B69\u6027\uFF09\u306B\u3064\u3044\u3066",
+      "\u7279\u8A31\u6CD5\u7B2C\uFF12\uFF19\u6761\u7B2C\uFF12\u9805\u306E\u898F\u5B9A\u306B\u3088\u308A\u7279\u8A31\u3092\u53D7\u3051\u308B\u3053\u3068\u304C\u3067\u304D\u306A\u3044\u3002",
+      "",
+      "\u30FB\u8ACB\u6C42\u9805 1-3,5",
+      "\u30FB\u5F15\u7528\u6587\u732E\u7B49 1,2",
+      "\u30FB\u5099\u8003",
+      "\u5F15\u7528\u6587\u732E\uFF11\u306E\u6BB5\u843D\uFF3B\uFF10\uFF10\uFF15\uFF18\uFF3D\uFF0D\uFF3B\uFF10\uFF10\uFF16\uFF11\uFF3D\u53CA\u3073\uFF3B\uFF10\uFF10\uFF17\uFF19\uFF3D\u3001\u56F3\uFF11\u3092\u53C2\u7167\u3002\u5F15\u7528\u6587\u732E\uFF12\u306E\u6BB5\u843D\uFF3B\uFF10\uFF10\uFF11\uFF10\uFF3D\u3092\u53C2\u7167\u3002",
+      "",
+      "\u30FB\u8ACB\u6C42\u9805 11",
+      "\u30FB\u5F15\u7528\u6587\u732E\u7B49 1",
+      "\u30FB\u5099\u8003",
+      "\u5F15\u7528\u6587\u732E\uFF11\u306E\u6BB5\u843D\uFF3B\uFF10\uFF10\uFF12\uFF10\uFF3D\uFF0D\uFF3B\uFF10\uFF10\uFF12\uFF15\uFF3D\u3092\u53C2\u7167\u3002",
+      "",
+      "\u25CF\u7406\u7531\uFF12\uFF08\u30B5\u30DD\u30FC\u30C8\u8981\u4EF6\uFF09\u306B\u3064\u3044\u3066",
+      "\u7279\u8A31\u6CD5\u7B2C\uFF13\uFF16\u6761\u7B2C\uFF16\u9805\u7B2C\uFF11\u53F7\u306E\u898F\u5B9A\u306B\u9055\u53CD\u3059\u308B\u3002",
+      "",
+      "\u30FB\u8ACB\u6C42\u9805 4,6",
+      "\u30FB\u5099\u8003",
+      "\u8ACB\u6C42\u9805\uFF14\u53CA\u3073\uFF16\u306E\u8A18\u8F09\u306F\u660E\u78BA\u3067\u306A\u3044\u3002",
+      "",
+      "\uFF1C\u62D2\u7D76\u306E\u7406\u7531\u3092\u767A\u898B\u3057\u306A\u3044\u8ACB\u6C42\u9805\uFF1E",
+      "\u8ACB\u6C42\u9805\uFF08\uFF17\uFF0D\uFF11\uFF10\u3001\uFF11\uFF12\uFF0D\uFF11\uFF14\uFF09\u306B\u4FC2\u308B\u767A\u660E\u306B\u3064\u3044\u3066\u306F\u3001\u62D2\u7D76\u306E\u7406\u7531\u3092\u767A\u898B\u3057\u306A\u3044\u3002"
+    ].join("\n");
+
+    var result = analyzer.analyze(testInput);
+
+    out("--- refMap ---");
+    out(JSON.stringify(result.refMap, null, 2));
+
+    out("\n--- rowsNovelty ---");
+    out(JSON.stringify(result.rowsNovelty, null, 2));
+
+    out("\n--- rowsOther ---");
+    out(JSON.stringify(result.rowsOther, null, 2));
+
+    // Check open claims
+    out("\n--- Open Claims ---");
+    out("explicitOpen: " + JSON.stringify(result.explicitOpen));
+    out("openClaims: " + JSON.stringify(result.openClaims));
+    out("assignedClaims: " + JSON.stringify(result.assignedClaims));
+
+    assertDeep("openClaims = 7-10,12-14",
+      result.openClaims, [7,8,9,10,12,13,14]);
+
+    assertDeep("assignedClaims contains 1,2,3,4,5,6,11",
+      result.assignedClaims, [1,2,3,4,5,6,11]);
+
+    assert("explicitOpen is not null", result.explicitOpen !== null, true);
+
+    // Check novelty rows
+    assert("2 novelty rows", result.rowsNovelty.length, 2);
+
+    if (result.rowsNovelty.length >= 1) {
+      var row0 = result.rowsNovelty[0];
+      assert("row0 claims", row0[0], "1-3,5");
+      assert("row0 type", row0[1], "\u9032\u6B69\u6027");
+      assert("row0 article contains 29\u6761", row0[2].indexOf("29\u6761") >= 0, true);
+
+      out("\nrow0 paragraphs/FIG: " + JSON.stringify(row0[4]));
+      assert("row0 para contains [0061]-[0058]",
+        row0[4].indexOf("[0061]-[0058]") >= 0, true);
+      assert("row0 para contains [0079]",
+        row0[4].indexOf("[0079]") >= 0, true);
+      assert("row0 para contains FIG:[\u56F31]",
+        row0[4].indexOf("FIG:[\u56F31]") >= 0, true);
+      assert("row0 para has newline (multiline)",
+        row0[4].indexOf("\n") >= 0, true);
+    }
+
+    if (result.rowsNovelty.length >= 2) {
+      var row1 = result.rowsNovelty[1];
+      assert("row1 claims", row1[0], "11");
+      out("\nrow1 paragraphs/FIG: " + JSON.stringify(row1[4]));
+      assert("row1 para contains [0025]-[0020]",
+        row1[4].indexOf("[0025]-[0020]") >= 0, true);
+    }
+
+    // Check other rows
+    assert("1 other row", result.rowsOther.length, 1);
+    if (result.rowsOther.length >= 1) {
+      assert("other row0 claims", result.rowsOther[0][0], "4,6");
+    }
+
+    // Render the tables
+    out("\n=== Rendered Novelty Table ===");
+    var noveltyTable = table.render(
+      ["Claim(s)", "Type", "Article", "References", "Paragraphs/FIG"],
+      result.rowsNovelty
+    );
+    out(noveltyTable);
+
+    out("\n=== Rendered Other Table ===");
+    var otherTable = table.render(
+      ["Claim(s)", "Reason", "Article"],
+      result.rowsOther
+    );
+    out(otherTable);
+
+    // Open claims display
+    out("\n=== Open Claims Display ===");
+    var openText = "";
+    if (result.explicitOpen !== null) openText += "Source: \uFF1C\u62D2\u7D76\u306E\u7406\u7531\u3092\u767A\u898B\u3057\u306A\u3044\u8ACB\u6C42\u9805\uFF1E section\n";
+    else openText += "Source: inferred\n";
+    var noneLabel = result.explicitOpen !== null ? "(none)" : "(none or unknown)";
+    openText += "Open claims: " + (result.openClaims.length ? u.claimsToCompactRanges(result.openClaims) : noneLabel) + "\n";
+    openText += "Assigned claims: " + (result.assignedClaims.length ? u.claimsToCompactRanges(result.assignedClaims) : "(none)") + "\n";
+    out(openText);
+
+    // Summary
+    out("\n=== Summary ===");
+    out("Passed: " + passed + ", Failed: " + failed);
+  </script>
+</body>
+</html>

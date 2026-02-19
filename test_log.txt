@@ -1,0 +1,97 @@
+=== Test run: 2026-02-20T02:13:40.461029 ===
+Node: C:\Users\yohei\.fnm\node-versions\v24.13.1\installation\node.exe
+Exit code: 0
+
+--- stdout ---
+
+=== Mod 1: ParagraphRefSet (legacy desc mode) ===
+PASS Test1 desc
+PASS Test2 dedup+compress
+PASS Test3 gap
+PASS Test4 multiline
+PASS Test5 asc
+
+=== Mod 1b: ParagraphRefSet (new groupOrder/rangeDirection mode) ===
+PASS NewMode primary
+PASS NewMode asc+desc range
+PASS NewMode asc+asc range
+PASS NewMode desc+desc range
+PASS NewMode multiline asc+desc
+PASS NewMode flat asc+desc
+PASS NewMode dedup
+
+=== Mod 2: ASCII Table ===
+PASS displayWidth ASCII
+PASS displayWidth CJK
+PASS displayWidth mixed
+PASS displayWidth FW paren
+PASS padRightDisplay ASCII
+PASS padRightDisplay CJK
+Simple table:
++---+---+
+| A | B |
++---+---+
+| x | y |
++---+---+
+CJK table:
++----------+--------+-------------------+
+| Claim(s) | Type   | Article           |
++----------+--------+-------------------+
+| 1-3      | 進歩性 | 特許法第29条第2項 |
++----------+--------+-------------------+
+Multiline table:
++----------+----------------------+
+| Claim(s) | Paragraphs/FIG       |
++----------+----------------------+
+| 1-3      | [0079] [0061]-[0058] |
+|          | FIG:[図1]            |
++----------+----------------------+
+
+=== Mod 3: extractOpenClaims ===
+PASS OpenClaims fullwidth parens
+PASS OpenClaims halfwidth parens
+PASS OpenClaims no parens
+PASS OpenClaims absent
+
+=== Mod 4: Citation-specific paragraph attribution ===
+PASS Cite-attr keys
+PASS Cite-attr ref1 has tokens
+PASS Cite-attr ref2 empty
+PASS Cite-attr ref3 empty
+PASS Cite-attr ref1 has [0021]
+PASS Cite-attr ref1 has FIG:[図8]
+PASS Cite-attr2 ref1 has [0079]
+PASS Cite-attr2 ref1 has FIG
+PASS Cite-attr2 ref2 has [0010]
+PASS Cite-attr2 ref2 no FIG
+PASS Cite-attr3 key 0 exists
+
+=== Mod 4b: Citation duplication prevention ===
+PASS Cite-dup ref1 has tokens
+PASS Cite-dup ref2 empty
+PASS Cite-dup ref3 empty
+
+=== Mod 5: Analyzer join separator ===
+PASS Pipeline claim6 claims
+PASS Pipeline claim6 kind
+PASS Pipeline claim6 no FIG-/-N: pattern
+PASS Pipeline claim6 has ref1 label
+PASS Pipeline claim6 no ref2 label in paras
+PASS Pipeline claim6 no ref3 label in paras
+PASS Pipeline claim6 refs no slash-join
+PASS Pipeline has _debugParaByRef
+PASS Pipeline _debugParaByRef length
+
+=== Mod 6: IO CSV ===
+PASS CSV basic
+PASS CSV escape comma
+PASS CSV newline flatten
+PASS CSV empty rows
+
+=== Utils ===
+PASS uniq
+PASS claimsToCompactRanges
+
+=== Summary ===
+Passed: 51, Failed: 0
+

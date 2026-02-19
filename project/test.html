@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <title>Unit Tests</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; padding: 20px; }
+    .pass { color: #4f4; }
+    .fail { color: #f44; font-weight: bold; }
+    pre { background: #222; padding: 10px; border-radius: 6px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Unit Tests</h1>
+  <pre id="log"></pre>
+
+  <script src="js/namespace.js?v=2"></script>
+  <script src="js/utils.js?v=2"></script>
+  <script src="js/paragraph_ref_set.js?v=2"></script>
+  <script src="js/rejection_parser.js?v=2"></script>
+  <script src="js/rejection_analyzer.js?v=2"></script>
+  <script src="js/ascii_table.js?v=2"></script>
+  <script>
+    var log = document.getElementById("log");
+    var passed = 0, failed = 0;
+
+    function assert(label, actual, expected) {
+      if (actual === expected) {
+        log.innerHTML += '<span class="pass">PASS</span> ' + esc(label) + "\n";
+        passed++;
+      } else {
+        log.innerHTML += '<span class="fail">FAIL</span> ' + esc(label) + "\n";
+        log.innerHTML += '  expected: ' + esc(JSON.stringify(expected)) + "\n";
+        log.innerHTML += '  actual:   ' + esc(JSON.stringify(actual)) + "\n";
+        failed++;
+      }
+    }
+
+    function assertDeep(label, actual, expected) {
+      var a = JSON.stringify(actual);
+      var e = JSON.stringify(expected);
+      if (a === e) {
+        log.innerHTML += '<span class="pass">PASS</span> ' + esc(label) + "\n";
+        passed++;
+      } else {
+        log.innerHTML += '<span class="fail">FAIL</span> ' + esc(label) + "\n";
+        log.innerHTML += '  expected: ' + esc(e) + "\n";
+        log.innerHTML += '  actual:   ' + esc(a) + "\n";
+        failed++;
+      }
+    }
+
+    function esc(s) {
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    }
+
+    var u = new window.ROA.Utils();
+    var parser = new window.ROA.RejectionParser(u);
+    var analyzer = new window.ROA.RejectionAnalyzer(u, parser);
+    var table = new window.ROA.AsciiTable(u);
+
+    // ============================================================
+    // Modification 1: ParagraphRefSet descending + re-compression
+    // ============================================================
+    log.innerHTML += "\n=== Mod 1: ParagraphRefSet ===\n";
+
+    (function() {
+      // Test 1: [0079] [0058]-[0061] FIG:[図1]
+      var s1 = new window.ROA.ParagraphRefSet(u);
+      s1.addToken("[0079]");
+      s1.addToken("[0058]-[0061]");
+      s1.addToken("FIG:[図1]");
+      assert("Test1 desc", s1.format({desc:true}), "[0079] [0061]-[0058] FIG:[図1]");
+
+      // Test 2: [0058]-[0061] [0060] [0061] → [0061]-[0058]
+      var s2 = new window.ROA.ParagraphRefSet(u);
+      s2.addToken("[0058]-[0061]");
+      s2.addToken("[0060]");
+      s2.addToken("[0061]");
+      assert("Test2 dedup+compress", s2.format({desc:true}), "[0061]-[0058]");
+
+      // Test 3: [0001]-[0003] [0005] → [0005] [0003]-[0001]
+      var s3 = new window.ROA.ParagraphRefSet(u);
+      s3.addToken("[0001]-[0003]");
+      s3.addToken("[0005]");
+      assert("Test3 gap", s3.format({desc:true}), "[0005] [0003]-[0001]");
+
+      // Test multiline
+      var s4 = new window.ROA.ParagraphRefSet(u);
+      s4.addToken("[0079]");
+      s4.addToken("[0058]-[0061]");
+      s4.addToken("FIG:[図1]");
+      assert("Test4 multiline", s4.format({desc:true, multiline:true}), "[0079] [0061]-[0058]\nFIG:[図1]");
+
+      // Test ascending
+      var s5 = new window.ROA.ParagraphRefSet(u);
+      s5.addToken("[0001]-[0003]");
+      s5.addToken("[0005]");
+      assert("Test5 asc", s5.format({desc:false}), "[0001]-[0003] [0005]");
+    })();
+
+    // ============================================================
+    // Modification 2: ASCII Table
+    // ============================================================
+    log.innerHTML += "\n=== Mod 2: ASCII Table ===\n";
+
+    (function() {
+      // displayWidth
+      assert("displayWidth ASCII", u.displayWidth("abc"), 3);
+      assert("displayWidth CJK", u.displayWidth("進歩性"), 6);
+      assert("displayWidth mixed", u.displayWidth("ab進歩"), 6);
+      assert("displayWidth FW paren", u.displayWidth("（）"), 4);
+
+      // padRightDisplay
+      assert("padRightDisplay ASCII", u.padRightDisplay("abc", 6), "abc   ");
+      assert("padRightDisplay CJK", u.padRightDisplay("進歩", 6), "進歩  ");
+
+      // Simple table
+      var t1 = table.render(["A", "B"], [["x", "y"]]);
+      log.innerHTML += "Simple table:\n" + esc(t1) + "\n";
+
+      // CJK table
+      var t2 = table.render(
+        ["Claim(s)", "Type", "Article"],
+        [["1-3", "進歩性", "特許法第29条第2項"]]
+      );
+      log.innerHTML += "CJK table:\n" + esc(t2) + "\n";
+
+      // Multiline cell
+      var t3 = table.render(
+        ["Claim(s)", "Paragraphs/FIG"],
+        [["1-3", "[0079] [0061]-[0058]\nFIG:[図1]"]]
+      );
+      log.innerHTML += "Multiline table:\n" + esc(t3) + "\n";
+    })();
+
+    // ============================================================
+    // Modification 3: extractOpenClaims
+    // ============================================================
+    log.innerHTML += "\n=== Mod 3: extractOpenClaims ===\n";
+
+    (function() {
+      // Fullwidth brackets with Japanese comma
+      var text1 = "＜拒絶の理由を発見しない請求項＞\n請求項（１－１０、１２－１４）に係る発明については、拒絶の理由を発見しない。";
+      var r1 = parser.extractOpenClaims(text1);
+      assertDeep("OpenClaims fullwidth parens", r1, [1,2,3,4,5,6,7,8,9,10,12,13,14]);
+
+      // Half-width brackets
+      var text2 = "拒絶の理由を発見しない請求項\n請求項(1-10,12-14)に係る発明";
+      var r2 = parser.extractOpenClaims(text2);
+      assertDeep("OpenClaims halfwidth parens", r2, [1,2,3,4,5,6,7,8,9,10,12,13,14]);
+
+      // No brackets (existing behavior)
+      var text3 = "拒絶の理由を発見しない請求項\n請求項 1-3,5\n";
+      var r3 = parser.extractOpenClaims(text3);
+      assertDeep("OpenClaims no parens", r3, [1,2,3,5]);
+
+      // No section → null
+      var text4 = "何もない文章";
+      var r4 = parser.extractOpenClaims(text4);
+      assert("OpenClaims absent", r4, null);
+    })();
+
+    // ============================================================
+    // Utils: claimsToCompactRanges + uniq
+    // ============================================================
+    log.innerHTML += "\n=== Utils ===\n";
+
+    (function() {
+      assertDeep("uniq", u.uniq([1,2,2,3,1]), [1,2,3]);
+      assert("claimsToCompactRanges", u.claimsToCompactRanges([1,2,3,5,7,8,9]), "1-3,5,7-9");
+    })();
+
+    // ============================================================
+    // Summary
+    // ============================================================
+    log.innerHTML += "\n=== Summary ===\n";
+    log.innerHTML += "Passed: " + passed + ", Failed: " + failed + "\n";
+  </script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>拒絶理由通知 分析ツール</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>拒絶理由通知 分析ツール</h1>
+    <div class="toolbar">
+      <button id="btnAnalyze" class="btn primary">解析</button>
+      <button id="btnClear" class="btn">クリア</button>
+      <label class="chk"><input type="checkbox" id="optDebug" /> debug</label>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="panel">
+      <h2>入力</h2>
+      <textarea id="input" class="textarea" placeholder="拒絶理由通知テキストを貼り付け"></textarea>
+      <div class="hint">Ctrl/Cmd + Enter で解析 ｜ Ctrl/Cmd + Shift + P で印刷</div>
+    </section>
+
+    <section class="panel">
+      <h2>新規性・進歩性（29条） <button id="btnCopyNovelty" class="btn btn-sm">CSVコピー</button></h2>
+      <pre id="outNovelty" class="pre"></pre>
+    </section>
+
+    <section class="panel">
+      <h2>その他理由（36条など） <button id="btnCopyOther" class="btn btn-sm">CSVコピー</button></h2>
+      <pre id="outOther" class="pre"></pre>
+    </section>
+
+    <section class="panel">
+      <h2>空いている請求項 <button id="btnCopyOpen" class="btn btn-sm">CSVコピー</button></h2>
+      <pre id="outOpen" class="pre"></pre>
+    </section>
+
+    <section id="debugBox" class="panel" style="display:none;">
+      <h2>Debug</h2>
+      <pre id="outDebug" class="pre"></pre>
+    </section>
+  </main>
+
+  <!-- JS: order matters -->
+  <script src="js/namespace.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/paragraph_ref_set.js"></script>
+  <script src="js/rejection_parser.js"></script>
+  <script src="js/rejection_analyzer.js"></script>
+  <script src="js/ascii_table.js"></script>
+  <script src="js/io.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
